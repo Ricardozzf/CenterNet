@@ -242,9 +242,10 @@ class DLA(nn.Module):
                            level_root=True, root_residual=residual_root)
         self.level4 = Tree(levels[4], block, channels[3], channels[4], 2,
                            level_root=True, root_residual=residual_root)
+        '''
         self.level5 = Tree(levels[5], block, channels[4], channels[5], 2,
                            level_root=True, root_residual=residual_root)
-
+        '''
         self.avgpool = nn.AvgPool2d(pool_size)
         self.fc = nn.Conv2d(channels[-1], num_classes, kernel_size=1,
                             stride=1, padding=0, bias=True)
@@ -289,7 +290,7 @@ class DLA(nn.Module):
     def forward(self, x):
         y = []
         x = self.base_layer(x)
-        for i in range(6):
+        for i in range(5):
             x = getattr(self, 'level{}'.format(i))(x)
             y.append(x)
         if self.return_levels:
@@ -317,8 +318,8 @@ class DLA(nn.Module):
 
 
 def dla34(pretrained, **kwargs):  # DLA-34
-    model = DLA([1, 1, 1, 2, 2, 1],
-                [16, 32, 64, 128, 256, 512],
+    model = DLA([1, 1, 1, 2, 2],
+                [16, 32, 64, 128, 256],
                 block=BasicBlock, **kwargs)
     if pretrained:
         model.load_pretrained_model(data='imagenet', name='dla34', hash='ba72cf86')
@@ -457,7 +458,7 @@ class IDAUp(nn.Module):
             else:
                 up = nn.ConvTranspose2d(
                     out_dim, out_dim, f * 2, stride=f, padding=f // 2,
-                    output_padding=0, groups=out_dim, bias=False)
+                    output_padding=0, groups=1, bias=False)
                 fill_up_weights(up)
             setattr(self, 'proj_' + str(i), proj)
             setattr(self, 'up_' + str(i), up)
