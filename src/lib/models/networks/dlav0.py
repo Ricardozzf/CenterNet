@@ -311,9 +311,10 @@ class DLA(nn.Module):
             model_weights = model_zoo.load_url(model_url)
         num_classes = len(model_weights[list(model_weights.keys())[-1]])
         self.fc = nn.Conv2d(
-            self.channels[-1], num_classes,
+            self.channels[-1]*2, num_classes,
             kernel_size=1, stride=1, padding=0, bias=True)
-        self.load_state_dict(model_weights)
+        #self.load_state_dict(model_weights)
+        self.load_state_dict({k:v for k,v in model_weights.items() if not 'level5' in k})
         self.fc = fc
 
 
