@@ -122,6 +122,8 @@ class PoseResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
+        self.downC = nn.Conv2d(512, 256, 1, 1)
+
         # used for deconv layers
         self.deconv_layers = self._make_deconv_layer(
             3,
@@ -218,6 +220,8 @@ class PoseResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+
+        x = self.downC(x)
 
         #x = self.deconv_layers(x)
         ret = {}
