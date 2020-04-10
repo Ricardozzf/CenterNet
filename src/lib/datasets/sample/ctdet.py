@@ -104,8 +104,8 @@ class CTDetDataset(data.Dataset):
         bbox[[0, 2]] = width - bbox[[2, 0]] - 1
       bbox[:2] = affine_transform(bbox[:2], trans_output)
       bbox[2:] = affine_transform(bbox[2:], trans_output)
-      bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, output_w - 1)
-      bbox[[1, 3]] = np.clip(bbox[[1, 3]], 0, output_h - 1)
+      bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, output_w )
+      bbox[[1, 3]] = np.clip(bbox[[1, 3]], 0, output_h )
       h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
       if h > 0 and w > 0:
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
