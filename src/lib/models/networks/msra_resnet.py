@@ -273,7 +273,7 @@ class PoseResNet(nn.Module):
         else:
             print('=> imagenet pretrained model dose not exist')
             print('=> please download it first')
-            raise ValueError('imagenet pretrained model does not exist')
+            #raise ValueError('imagenet pretrained model does not exist')
 
 
 resnet_spec = {18: (BasicBlock, [2, 2, 2, 2]),
@@ -287,5 +287,5 @@ def get_pose_net(num_layers, heads, head_conv):
   block_class, layers = resnet_spec[num_layers]
 
   model = PoseResNet(block_class, layers, heads, head_conv=head_conv)
-  model.init_weights(num_layers, pretrained=True)
+  model.init_weights(num_layers, pretrained=False)
   return model
