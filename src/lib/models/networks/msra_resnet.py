@@ -47,7 +47,7 @@ class BasicBlock(nn.Module):
         for l in [self.conv1, self.conv2]:
             nn.init.kaiming_uniform_(l.weight, a=1)
         if self.downsample:
-            nn.init.kaiming_uniform_(self.downsample.weight, a=1)
+            nn.init.kaiming_uniform_(self.downsample[0].weight, a=1)
 
     def forward(self, x):
         residual = x
