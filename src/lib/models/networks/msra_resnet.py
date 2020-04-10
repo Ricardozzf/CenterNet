@@ -44,6 +44,11 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
+        for l in [self.conv1, self.conv2]:
+            nn.init.kaiming_uniform_(l.weight, a=1)
+        if self.downsample:
+            nn.init.kaiming_uniform_(self.downsample.weight, a=1)
+
     def forward(self, x):
         residual = x
 
@@ -121,6 +126,8 @@ class PoseResNet(nn.Module):
         self.layer2 = self._make_layer(block, 64, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 128, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 256, layers[3], stride=2)
+
+        nn.init.kaiming_uniform_(self.conv1.weight, a=1)
 
         #self.downC = nn.Conv2d(512, 256, 1, 1)
 
