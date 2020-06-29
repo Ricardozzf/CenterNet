@@ -126,6 +126,11 @@ class PoseResNet(nn.Module):
         deconv_layers = []
         for _ in range(3):
             deconv_layers.append(self._make_deconv_layer(1,[256],[4],))
+        
+        down_channel = []
+        for i in range(0,3):
+            down_channel.append(torch.nn.Conv2d(256 * 2**(i + 1),256,1,1))
+        self.down_channel = torch.nn.ModuleList(down_channel)
 
         self.deconv_layers = torch.nn.ModuleList(deconv_layers)
         # self.final_layer = []
@@ -218,11 +223,11 @@ class PoseResNet(nn.Module):
         x = self.layer1(x)
         fpnlist.append(x)
         x = self.layer2(x)
-        fpnlist.append(x)
+        fpnlist.append(self.down_channel[0](x))
         x = self.layer3(x)
-        fpnlist.append(x)
+        fpnlist.append(self.down_channel[1](x))
         x = self.layer4(x)
-        fpnlist.append(x)
+        fpnlist.append(self.down_channel[2](x))
 
 
         for i in range(3):
