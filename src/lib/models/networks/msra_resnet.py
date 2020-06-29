@@ -123,11 +123,11 @@ class PoseResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
         # used for deconv layers
-        self.deconv_layers = self._make_deconv_layer(
-            3,
-            [256, 256, 256],
-            [4, 4, 4],
-        )
+        deconv_layers = []
+        for _ in range(3):
+            deconv_layers.append(self._make_deconv_layer(1,[256],[4],))
+
+        self.deconv_layers = torch.nn.ModuleList(deconv_layers)
         # self.final_layer = []
 
         for head in sorted(self.heads):
@@ -214,12 +214,20 @@ class PoseResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
+        fpnlist = []
         x = self.layer1(x)
+        fpnlist.append(x)
         x = self.layer2(x)
+        fpnlist.append(x)
         x = self.layer3(x)
+        fpnlist.append(x)
         x = self.layer4(x)
+        fpnlist.append(x)
 
-        x = self.deconv_layers(x)
+
+        for i in range(3):
+            fpnlist[-1] = self.deconv_layers[i](fpnlist.pop()) + fpnlist[-1]
+        x = fpnlist.pop()
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
