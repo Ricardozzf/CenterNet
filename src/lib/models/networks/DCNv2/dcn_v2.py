@@ -8,8 +8,8 @@ import math
 from torch import nn
 from torch.nn.modules.utils import _pair
 
-from .dcn_v2_func import DCNv2Function
-from .dcn_v2_func import DCNv2PoolingFunction
+from dcn_v2_func import DCNv2Function
+from dcn_v2_func import DCNv2PoolingFunction
 
 class DCNv2(nn.Module):
 
