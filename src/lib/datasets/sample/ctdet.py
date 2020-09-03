@@ -20,6 +20,12 @@ class CTDetDataset(data.Dataset):
                     dtype=np.float32)
     return bbox
 
+  def _coco_box_to_headoff(self, box):
+    cx = (box[0] + box[2]) / 2
+    cy = (box[1] + box[3]) / 2
+    head_off = np.array([box[4]-cx, box[5]-cy], dtype=np.float32)
+    return head_off
+
   def _get_border(self, border, size):
     i = 1
     while size - border // i <= border // i:
@@ -33,7 +39,7 @@ class CTDetDataset(data.Dataset):
     ann_ids = self.coco.getAnnIds(imgIds=[img_id])
     anns = self.coco.loadAnns(ids=ann_ids)
     num_objs = min(len(anns), self.max_objs)
-
+    
     img = cv2.imread(img_path)
 
     height, width = img.shape[0], img.shape[1]
@@ -85,6 +91,9 @@ class CTDetDataset(data.Dataset):
 
     hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)
     wh = np.zeros((self.max_objs, 2), dtype=np.float32)
+    head_off = np.zeros((self.max_objs, 4), dtype=np.float32)
+    wh_f = np.zeros_like(wh)
+
     dense_wh = np.zeros((2, output_h, output_w), dtype=np.float32)
     reg = np.zeros((self.max_objs, 2), dtype=np.float32)
     ind = np.zeros((self.max_objs), dtype=np.int64)
@@ -99,13 +108,51 @@ class CTDetDataset(data.Dataset):
     for k in range(num_objs):
       ann = anns[k]
       bbox = self._coco_box_to_bbox(ann['bbox'])
+      head_cord = np.zeros(2, dtype=np.float32)
+      wh_fk = np.zeros(2, dtype=np.float32)
+      if "head" in ann:
+        head_cord = np.array(ann['head'],dtype=np.float32)
+      if "wh_f" in ann:
+        wh_fk = np.array(ann['wh_f'], dtype=np.float32)
+      whfk_org = np.zeros(2, dtype=np.float32)
+
+      head_labeled = True
+      if head_cord[0] == 0 and head_cord[1] == 0:
+        head_labeled = False
+
+      #head_off = self._coco_box_to_headoff(ann['bbox'])
       cls_id = int(self.cat_ids[ann['category_id']])
       if flipped:
         bbox[[0, 2]] = width - bbox[[2, 0]] - 1
+        head_cord[0] = width - head_cord[0] - 1
       bbox[:2] = affine_transform(bbox[:2], trans_output)
       bbox[2:] = affine_transform(bbox[2:], trans_output)
+
+      whfk_org = affine_transform(whfk_org, trans_output)
+      wh_fk = affine_transform(wh_fk, trans_output)
+      head_cord = affine_transform(head_cord, trans_output)
+
       bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, output_w - 1)
       bbox[[1, 3]] = np.clip(bbox[[1, 3]], 0, output_h - 1)
+      head_cord[0] = np.clip(head_cord[0], 0, output_w-1)
+      head_cord[1] = np.clip(head_cord[1], 0, output_h-1)
+
+      # head_off [-x x -y y]
+      if head_labeled:
+        off_x = head_cord[0] - (bbox[0] + bbox[2]) / 2
+        off_y = head_cord[1] - (bbox[1] + bbox[3]) / 2
+        if off_x < 0:
+          head_off[k, 0] = -off_x
+        else:
+          head_off[k, 1] = off_x
+
+        if off_y < 0:
+          head_off[k, 2] = -off_y
+        else:
+          head_off[k, 3] = off_y
+      
+      wh_f[k] = wh_fk - whfk_org
+
       h, w = bbox[3] - bbox[1], bbox[2] - bbox[0]
       if h > 0 and w > 0:
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
@@ -126,7 +173,7 @@ class CTDetDataset(data.Dataset):
         gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
     
-    ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh}
+    ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'head_off':head_off, 'wh_f':wh_f}
     if self.opt.dense_wh:
       hm_a = hm.max(axis=0, keepdims=True)
       dense_wh_mask = np.concatenate([hm_a, hm_a], axis=0)

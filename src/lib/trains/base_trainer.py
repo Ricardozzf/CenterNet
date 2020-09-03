@@ -54,6 +54,7 @@ class BaseTrainer(object):
     opt = self.opt
     results = {}
     data_time, batch_time = AverageMeter(), AverageMeter()
+
     avg_loss_stats = {l: AverageMeter() for l in self.loss_stats}
     num_iters = len(data_loader) if opt.num_iters < 0 else opt.num_iters
     bar = Bar('{}/{}'.format(opt.task, opt.exp_id), max=num_iters)

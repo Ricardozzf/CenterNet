@@ -123,21 +123,11 @@ class PoseResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
         # used for deconv layers
-        deconv_layers = []
-        for _ in range(1):
-            deconv_layers.append(self._make_deconv_layer(1,[256],[4],))
-        
-        
-        deconv_layers.append(self._make_deconv_layer(2,[256,256],[4,4],))
-        
-        down_channel = []
-        for i in range(0,1):
-            down_channel.append(torch.nn.Conv2d(256 * 2**(i + 2),256,3,1,1))
-        self.down_channel = torch.nn.ModuleList(down_channel)
-
-        self.down_channel_n = torch.nn.Conv2d(512,256,3,1,1)
-
-        self.deconv_layers = torch.nn.ModuleList(deconv_layers)
+        self.deconv_layers = self._make_deconv_layer(
+            3,
+            [256, 256, 256],
+            [4, 4, 4],
+        )
         # self.final_layer = []
 
         for head in sorted(self.heads):
@@ -224,21 +214,12 @@ class PoseResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
-        fpnlist = []
         x = self.layer1(x)
-        #fpnlist.append(x)
         x = self.layer2(x)
-        #fpnlist.append(self.down_channel[0](x))
         x = self.layer3(x)
-        fpnlist.append(self.down_channel[0](x))
         x = self.layer4(x)
-        fpnlist.append(x)
 
-        for i in range(1):
-            fpnlist[-1] = torch.cat([self.deconv_layers[i](fpnlist.pop()), fpnlist[-1]],dim=1)
-        x = fpnlist.pop()
-        x = self.down_channel_n(x)
-        x = self.deconv_layers[1](x)
+        x = self.deconv_layers(x)
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)

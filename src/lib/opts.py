@@ -315,7 +315,9 @@ class opts(object):
     elif opt.task == 'ctdet':
       # assert opt.dataset in ['pascal', 'coco']
       opt.heads = {'hm': opt.num_classes,
-                   'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
+                   'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes,
+                   'head_off':4,
+                   'wh_f':2}
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
     elif opt.task == 'multi_pose':
